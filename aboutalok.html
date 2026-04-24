@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>aboutalok</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:       #07070f;
+      --text:     #ccc9c1;
+      --dim:      #3e3c58;
+      --mid:      #76738a;
+      --accent:   #6ee7b7;
+      --accent2:  #818cf8;
+      --glow:     rgba(110,231,183,.07);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: clamp(15.5px, 1.8vw, 17.5px);
+      font-weight: 300;
+      line-height: 1.8;
+      cursor: none;
+      overflow-x: hidden;
+    }
+
+    /* ─── Cursor ─── */
+    #cur {
+      position: fixed; pointer-events: none; z-index: 9999;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      transform: translate(-50%,-50%);
+      mix-blend-mode: screen; opacity: .9;
+      transition: width .2s, height .2s, opacity .2s;
+      will-change: left,top;
+    }
+    #cur-ring {
+      position: fixed; pointer-events: none; z-index: 9998;
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 1px solid rgba(110,231,183,.22);
+      transform: translate(-50%,-50%);
+      will-change: left,top;
+      transition: opacity .3s;
+    }
+    #cur-trail {
+      position: fixed; pointer-events: none; z-index: 9997;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(110,231,183,.06) 0%, transparent 70%);
+      transform: translate(-50%,-50%);
+      will-change: left,top;
+    }
+    /* grow ring on links */
+    body:has(a:hover) #cur-ring { width: 44px; height: 44px; border-color: rgba(110,231,183,.35); }
+
+    /* ─── BG canvas ─── */
+    #bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    /* ─── Film grain ─── */
+    body::after {
+      content: ''; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.022'/%3E%3C/svg%3E");
+      opacity: .5;
+    }
+
+    /* ─── Nav ─── */
+    nav {
+      position: fixed; inset: 0 0 auto; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px clamp(24px, 5vw, 68px);
+      background: linear-gradient(to bottom, rgba(7,7,15,.92) 0%, transparent 100%);
+    }
+    .nav-logo {
+      font-size: .69em; font-weight: 500;
+      letter-spacing: .22em; color: var(--dim); text-transform: lowercase;
+    }
+    .nav-links { display: flex; gap: 26px; }
+    .nav-links a {
+      font-size: .67em; font-weight: 400;
+      letter-spacing: .12em; color: var(--dim);
+      text-decoration: none; text-transform: lowercase;
+      transition: color .25s;
+      cursor: none;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; left: 0; bottom: -2px;
+      width: 0; height: 1px; background: var(--accent);
+      transition: width .25s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ─── Hero ─── */
+    #hero {
+      position: relative; z-index: 2;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center; text-align: center;
+      padding: 100px clamp(24px, 8vw, 120px) 72px;
+    }
+    .h-tag {
+      font-size: .66em; font-weight: 400;
+      letter-spacing: .28em; color: var(--accent); text-transform: lowercase;
+      margin-bottom: 26px;
+      opacity: 0; animation: fadeUp .7s ease .2s forwards;
+    }
+    .h-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(34px, 6.2vw, 80px);
+      font-weight: 400; line-height: 1.13; letter-spacing: -.02em;
+      color: #fff; max-width: 760px;
+      opacity: 0; animation: fadeUp .95s ease .45s forwards;
+    }
+    .h-title em { font-style: italic; color: var(--accent); display: block; margin-top: .08em; }
+    .h-sub {
+      margin-top: 22px;
+      font-size: .84em; font-weight: 300;
+      color: var(--mid); max-width: 360px; line-height: 1.7;
+      opacity: 0; animation: fadeUp .85s ease .8s forwards;
+    }
+
+    /* typewriter for hero only */
+    .tw-wrap {
+      overflow: hidden;
+      display: inline-block;
+    }
+    .tw {
+      display: inline-block;
+      overflow: hidden; white-space: nowrap;
+      border-right: 1.5px solid var(--accent);
+      width: 0;
+    }
+    .tw-1 { animation: tw 2s steps(38) 1.1s forwards, blink .7s step-end 1.1s 4; }
+    .tw-2 { animation: tw 1.8s steps(32) 3.4s forwards, blink .7s step-end 3.4s infinite; }
+    @keyframes tw   { to { width: 100%; } }
+    @keyframes blink { 50% { border-color: transparent; } }
+
+    /* scroll cue */
+    .scroll-cue {
+      position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%);
+      opacity: 0; animation: fadeIn .8s ease 1.8s forwards;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+    }
+    .scroll-cue span {
+      font-size: .58em; letter-spacing: .22em; color: var(--dim); text-transform: lowercase;
+    }
+    .scroll-line {
+      width: 1px; height: 44px;
+      background: linear-gradient(to bottom, transparent, var(--accent));
+      animation: lineFlow 2.2s ease-in-out infinite;
+    }
+    @keyframes lineFlow {
+      0%,100% { opacity: .45; transform: scaleY(1); transform-origin: top; }
+      50%      { opacity: 1;   transform: scaleY(1.1); }
+    }
+
+    /* ─── Main column ─── */
+    main {
+      position: relative; z-index: 2;
+      max-width: 640px; margin: 0 auto;
+      padding: 0 clamp(24px, 5.5vw, 56px);
+    }
+
+    /* ─── Story block ─── */
+    .sb {
+      padding: 48px 0 0;
+      opacity: 0; transform: translateY(18px);
+      transition: opacity .55s cubic-bezier(.25,1,.4,1), transform .55s cubic-bezier(.25,1,.4,1);
+    }
+    .sb.in { opacity: 1; transform: translateY(0); }
+
+    /* paragraph group within a block */
+    .pg { margin-bottom: 18px; }
+    .pg:last-child { margin-bottom: 0; }
+
+    /* individual lines — stagger on reveal */
+    .ln {
+      display: block;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity .4s cubic-bezier(.25,1,.4,1), transform .4s cubic-bezier(.25,1,.4,1);
+    }
+    .sb.in .ln { opacity: 1; transform: translateY(0); }
+
+    /* stagger delays */
+    .sb.in .ln:nth-child(1)  { transition-delay:.03s }
+    .sb.in .ln:nth-child(2)  { transition-delay:.07s }
+    .sb.in .ln:nth-child(3)  { transition-delay:.11s }
+    .sb.in .ln:nth-child(4)  { transition-delay:.15s }
+    .sb.in .ln:nth-child(5)  { transition-delay:.19s }
+    .sb.in .ln:nth-child(6)  { transition-delay:.23s }
+    .sb.in .ln:nth-child(7)  { transition-delay:.27s }
+    .sb.in .ln:nth-child(8)  { transition-delay:.31s }
+    .sb.in .ln:nth-child(9)  { transition-delay:.35s }
+    .sb.in .ln:nth-child(10) { transition-delay:.39s }
+    .sb.in .ln:nth-child(11) { transition-delay:.43s }
+    .sb.in .ln:nth-child(12) { transition-delay:.47s }
+    .sb.in .ln:nth-child(13) { transition-delay:.51s }
+    .sb.in .ln:nth-child(14) { transition-delay:.55s }
+    .sb.in .ln:nth-child(15) { transition-delay:.59s }
+    .sb.in .ln:nth-child(16) { transition-delay:.63s }
+
+    /* text styles */
+    .t-n  { color: var(--text); }
+    .t-m  { color: var(--mid); }
+    .t-d  { color: var(--dim); font-style: italic; }
+    .t-hi { color: var(--accent); font-style: italic; }
+    .t-big {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(18px, 2.4vw, 24px);
+      font-style: italic; color: #ececec;
+      line-height: 1.45; display: block;
+      margin: 2px 0;
+    }
+
+    /* hover brightness on any line */
+    .ln:hover { filter: brightness(1.25); }
+
+    /* inner quote */
+    .iq {
+      display: block;
+      margin: 6px 0;
+      padding: 7px 0 7px 18px;
+      border-left: 1px solid rgba(110,231,183,.16);
+      color: var(--dim); font-style: italic; font-size: .91em;
+    }
+
+    /* gap utility */
+    .gap-s { margin-top: 8px; }
+    .gap-m { margin-top: 18px; }
+    .gap-l { margin-top: 28px; }
+
+    /* ─── Separator ─── */
+    .sep {
+      display: flex; align-items: center; gap: 12px;
+      margin: 40px 0 0;
+      opacity: 0; transform: scaleX(.65); transform-origin: left;
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    .sep.in { opacity: 1; transform: scaleX(1); }
+    .sep-l { flex: 1; height: 1px; background: linear-gradient(to right, transparent, rgba(110,231,183,.09), transparent); }
+    .sep-d { width: 3px; height: 3px; border-radius: 50%; background: rgba(110,231,183,.25); flex-shrink: 0; }
+
+    /* ─── Ending ─── */
+    #ending {
+      padding: 64px 0 48px;
+      opacity: 0; transform: translateY(16px);
+      transition: opacity .85s ease, transform .85s ease;
+    }
+    #ending.in { opacity: 1; transform: translateY(0); }
+    .end-line {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(20px, 3.2vw, 30px);
+      color: var(--mid); font-style: italic; line-height: 1.5;
+    }
+
+    /* ─── Footer ─── */
+    #footer {
+      padding: 0 0 88px; display: flex; gap: 22px;
+      opacity: 0; transition: opacity .9s ease .15s;
+    }
+    #footer.in { opacity: 1; }
+    #footer a {
+      font-size: .66em; font-weight: 400;
+      letter-spacing: .14em; color: var(--dim);
+      text-decoration: none; text-transform: lowercase;
+      padding-bottom: 2px; border-bottom: 1px solid transparent;
+      transition: color .22s, border-color .22s;
+      cursor: none;
+    }
+    #footer a:hover { color: var(--accent); border-bottom-color: rgba(110,231,183,.3); }
+
+    /* ─── Keyframes ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    /* ─── Mobile ─── */
+    @media (max-width: 500px) {
+      .h-title { font-size: clamp(28px, 9.5vw, 44px); }
+      nav { padding: 18px 22px; }
+      .nav-links { gap: 16px; }
+      .tw-1, .tw-2 {
+        width: auto !important; border-right: none;
+        animation: none; opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<div id="cur-trail"></div>
+<canvas id="bg"></canvas>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">aboutalok</div>
+  <div class="nav-links">
+    <a href="#">portfolio</a>
+    <a href="#">github</a>
+    <a href="#">instagram</a>
+  </div>
+</nav>
+
+<section id="hero">
+  <p class="h-tag">alok · a story</p>
+
+  <h1 class="h-title">
+    <span class="line line-1">i don't really know why you're here…</span>
+    <em class="line line-2">but since you are, this is me.</em>
+  </h1>
+
+  <p class="h-sub">
+    raw thoughts. no filter. no resume.<br>
+    just the actual thing.
+  </p>
+
+  <div class="scroll-cue">
+    <span>scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<main>
+
+  <!-- ── 1. the scared kid ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">i wasn't some special kid or anything.</span>
+      <span class="ln t-m gap-s">i was the kind of kid who was always a little scared — scared that if i don't do this, or say that, people won't want me around.</span>
+      <span class="ln t-d gap-s">it sounds dramatic now, but it didn't feel that way back then. it just felt like how things were.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n">so i tried to be good in everyone's eyes.</span>
+      <span class="ln t-m gap-s">fit in. laugh when they laugh. agree when they agree. nod along even when i had no idea what they were on about.</span>
+      <span class="ln t-d gap-s">and somewhere in all that fitting in, i think i just… became a version of myself that wasn't really me.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-big gap-l">only dead fish go with the flow.</span>
+      <span class="ln t-d gap-s">i just didn't realise it back then.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 2. the third person ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">i used to care a lot about what people thought of me. like, a lot more than i let on.</span>
+      <span class="ln t-m gap-s">it's kind of hard to explain but i always had this weird third-person view running in my head.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n">like — i'm in a conversation with someone, talking normally,</span>
+      <span class="ln t-m gap-s">but at the exact same time there's this other version of me watching both of us from outside. judging.</span>
+      <span class="iq ln gap-s">"was that okay to say?"</span>
+      <span class="iq ln">"should i have worded that differently?"</span>
+      <span class="iq ln">"how do i look right now?"</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">it's exhausting, honestly. i think too much. still do.</span>
+      <span class="ln t-d gap-s">i've gotten a little better at catching it, but it never fully goes away.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 3. not fitting in ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">people around me were fun, no doubt. funny too. i genuinely liked some of them.</span>
+      <span class="ln t-m gap-s">but most of them didn't really think big. or maybe they did, just about different things. and that gap… it got hard to ignore.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n">i'd sit there, laughing with them, going along with everything —</span>
+      <span class="ln t-d gap-s">but in my head i was somewhere else. seeing a bigger picture, or at least trying to.</span>
+      <span class="ln t-m gap-s">thinking about stuff they weren't thinking about. wondering about things that didn't seem to bother anyone else.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">it sounds lonely when i write it like that. it kind of was.</span>
+      <span class="ln t-d gap-s">and yeah — that meant a lot of fake laughs.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 4. school years ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">school was… average, i guess. not bad, not great. just there.</span>
+      <span class="ln t-m gap-s">i had like 2–3 real friends at most. which honestly felt fine most of the time.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n">till 7th, everything was simple. same place, same people. comfortable in a way that's easy to take for granted.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">8th was different.</span>
+      <span class="ln t-big gap-s">8th was actually good.</span>
+      <span class="ln t-m gap-s">not because of marks or anything like that — just because i felt like i actually had people. we had fun. real fun. the kind where you don't check your phone because you're already where you want to be.</span>
+      <span class="ln t-d gap-s">at least that's what it felt like back then.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">funny thing is — now i can barely find more than 2–3 of those guys.</span>
+      <span class="ln t-d gap-s">people just scatter, i guess.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 5. 9th ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">then 9th hit, and everything just… scattered.</span>
+      <span class="ln t-m gap-s">new school. new people. i got shifted to a higher section because apparently i was "better in studies." like that was some kind of reward.</span>
+      <span class="ln t-d gap-s">it didn't feel like one.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">that was enough to disconnect everything.</span>
+      <span class="ln t-hi gap-s">honestly? that place felt like hell.</span>
+      <span class="ln t-m gap-s">i had people to talk to, sure. but no one who'd actually wait for me. no one who'd look up when i walked in late and say "yeah, sit here."</span>
+      <span class="ln t-n gap-s">no one who actually cared whether i was there or not.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-d gap-m">and that difference — between people who are just around and people who actually notice you — you feel it. every single day.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 6. 10th ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">10th just passed. not too fast, not too slow. just… passed.</span>
+      <span class="ln t-m gap-s">i wasn't a topper. but i wasn't failing either. sat somewhere in the middle and didn't stress too much about it.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-big gap-m">75%.</span>
+      <span class="ln t-d gap-s">not crazy high. not embarrassing either.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">and honestly, i don't regret those numbers.</span>
+      <span class="ln t-m gap-s">because i wasn't just sitting and studying. i was doing calisthenics, trying to make content, figuring out what i was actually into.</span>
+      <span class="ln t-d gap-s">i was living a little, outside of the marks.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 7. 11th ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">then 11th.</span>
+      <span class="ln t-m gap-s">i chose PCM. not because i was confident about it or because someone told me to. just because… i wanted to. that felt like enough of a reason at the time.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">and yeah. it was bad.</span>
+      <span class="ln t-d gap-s">barely passed. some subjects were genuinely rough. i won't pretend otherwise.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 8. 12th ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">now i'm in 12th.</span>
+      <span class="ln t-m gap-s">still no "real" friends. just people i sit next to, talk to in between periods, and then go home.</span>
+      <span class="ln t-d gap-s">it's all surface level. conversations about nothing. no one really asking how you actually are.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">it is what it is. i've kind of made peace with that.</span>
+      <span class="ln t-d gap-s">doesn't mean it doesn't get to me sometimes though.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 9. hackathon ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">something did change though — in may 2026, i went to a hackathon.</span>
+      <span class="ln t-m gap-s">i didn't have a proper coding background. i honestly wasn't sure what i was doing there.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">but just being in that room, watching people build things from scratch in real time —</span>
+      <span class="ln t-m gap-s">something clicked. like a switch flipped.</span>
+      <span class="iq ln gap-s">"wait. we can actually build things? like, real things?"</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">since then i've been trying to go deeper into it. not just learn syntax — but actually make stuff. build things. figure out what i can do.</span>
+      <span class="ln t-d gap-s">it's slow. but it feels more real than most things i've done.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 10. night thoughts ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">at night i think about whether i'll actually get to where i want to go.</span>
+      <span class="ln t-m gap-s">whether the things i want are actually reachable, or if i'm just telling myself a story.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">and the weird part? i don't really feel confused about what i want.</span>
+      <span class="ln t-big gap-s">i feel like i know what i should be doing.</span>
+      <span class="ln t-n gap-s">and still — i don't do it. not consistently anyway.</span>
+      <span class="ln t-d gap-s">that gap between knowing and doing is probably the most frustrating thing about myself right now.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 11. discipline ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">i struggle with sitting down and actually doing the work.</span>
+      <span class="ln t-m gap-s">not because i can't. when i'm in it, i'm really in it. i just can't seem to start. or stay.</span>
+      <span class="ln t-d gap-s">and i know that's completely on me. no one else to point at.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">i'm trying to fix that. slowly. some days are better than others.</span>
+      <span class="ln t-m gap-s">trying not to waste whatever potential i think i have.</span>
+      <span class="ln t-d gap-s">because somewhere i know — if i keep moving like this, i'll look back and regret it. and i really don't want that.</span>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-l"></div><div class="sep-d"></div><div class="sep-l"></div></div>
+
+  <!-- ── 12. doubt ── -->
+  <div class="sb">
+    <div class="pg">
+      <span class="ln t-n">and yeah — one more thing i don't say out loud much:</span>
+      <span class="ln t-big gap-s">i doubt myself. more than people probably think.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">i look at people around me sometimes and just think — wow. they're doing it. they've got it figured out. or at least they look like they do.</span>
+      <span class="ln t-m gap-s">and i think — i wish i could be like that. that calm, that sure of themselves.</span>
+    </div>
+    <div class="pg">
+      <span class="ln t-n gap-m">but i'm not. i'm still figuring it out.</span>
+      <span class="ln t-d gap-s">and maybe that's okay. i don't know yet.</span>
+    </div>
+  </div>
+
+  <!-- ── Ending ── -->
+  <section id="ending">
+    <p class="end-line">that's not everything…</p>
+    <p class="end-line">but it's enough for now.</p>
+  </section>
+
+  <footer id="footer">
+    <a href="#">portfolio</a>
+    <a href="#">github</a>
+    <a href="#">instagram</a>
+  </footer>
+
+</main>
+
+<script>
+/* ─── Cursor ─── */
+const cur   = document.getElementById('cur');
+const ring  = document.getElementById('cur-ring');
+const trail = document.getElementById('cur-trail');
+let mx = -200, my = -200;
+let rx = -200, ry = -200;
+let tx = -200, ty = -200;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cur.style.left = mx + 'px'; cur.style.top = my + 'px';
+});
+
+(function loop() {
+  rx += (mx - rx) * 0.14; ry += (my - ry) * 0.14;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+
+  tx += (mx - tx) * 0.06; ty += (my - ty) * 0.06;
+  trail.style.left = tx + 'px'; trail.style.top = ty + 'px';
+
+  requestAnimationFrame(loop);
+})();
+
+/* ─── Canvas bg ─── */
+const cv  = document.getElementById('bg');
+const ctx = cv.getContext('2d');
+let W, H;
+
+const resize = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; };
+resize(); addEventListener('resize', resize);
+
+const pts = Array.from({length: 50}, () => ({
+  x: Math.random() * innerWidth,
+  y: Math.random() * innerHeight,
+  r: Math.random() * .9 + .2,
+  vx: (Math.random()-.5) * .11,
+  vy: (Math.random()-.5) * .11,
+  a: Math.random() * .15 + .03
+}));
+
+let scrollR = 0;
+addEventListener('scroll', () => {
+  scrollR = scrollY / Math.max(1, document.body.scrollHeight - innerHeight);
+  const sc = document.querySelector('.scroll-cue');
+  if (sc) sc.style.opacity = Math.max(0, 1 - scrollY / 100);
+});
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const t = Date.now() / 8000;
+
+  // orb 1 — green
+  const o1x = W * (.3 + Math.sin(t) * .08);
+  const o1y = H * (.25 + scrollR * .55);
+  const g1  = ctx.createRadialGradient(o1x, o1y, 0, o1x, o1y, W * .4);
+  g1.addColorStop(0, 'rgba(110,231,183,.058)');
+  g1.addColorStop(1, 'transparent');
+  ctx.fillStyle = g1; ctx.fillRect(0, 0, W, H);
+
+  // orb 2 — indigo
+  const o2x = W * (.7 + Math.cos(t * .7) * .07);
+  const o2y = H * (.65 + scrollR * .28);
+  const g2  = ctx.createRadialGradient(o2x, o2y, 0, o2x, o2y, W * .34);
+  g2.addColorStop(0, 'rgba(129,140,248,.046)');
+  g2.addColorStop(1, 'transparent');
+  ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
+
+  pts.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = W; else if (p.x > W) p.x = 0;
+    if (p.y < 0) p.y = H; else if (p.y > H) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(110,231,183,${p.a})`;
+    ctx.fill();
+  });
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* ─── Scroll reveal ─── */
+const items = document.querySelectorAll('.sb, .sep, #ending, #footer');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.06, rootMargin: '0px 0px -30px 0px' });
+
+items.forEach(el => io.observe(el));
+</script>
+</body>
+</html>
